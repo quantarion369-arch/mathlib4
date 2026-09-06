@@ -1,8 +1,12 @@
 import Lake
 open Lake DSL
 
-package AQARION where
-  -- add package configuration options here
+package «AQARION» where
+  -- depend on the local Mathlib fork, not external master
+  -- (place this package inside the forked mathlib4 tree)
 
-require Mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git"
+require mathlib from "../.."
+
+@[default_target]
+lean_lib «AQARION» where
+  roots := #[`AQARION]
