@@ -364,4 +364,37 @@ Critical Decision Points
 
 Bottom line: This repository is a candidate formalisation scaffold. It is not yet a verified certificate. The mathematical core is sound; the formal proof remains to be completed and compiled. C4 and publication remain BLOCKED until all gates are closed.
 
-🔒 FROZEN AUDIT · PASS XXI-C · NO FABRICATION 🤝
+🔒 # AQARION Lake Package (Candidate)
+
+**Status:** Source scaffold · Compiler certificate OPEN · C4 BLOCKED  
+**Root:** `020a9110088010116075e1812c98bcd2bcc4905367fa8943a68c8cd224cf284e`  
+**Date:** 2026-09-05
+
+## Core mathematical claim (computationally supported)
+
+\[
+\ker(D_\Pi|_{V_\Pi}) = \operatorname{ConstRightComp}(\Pi,T)
+\qquad\Rightarrow\qquad
+\operatorname{rank}(D_\Pi|_{V_\Pi}) = m - c_{\rm bip}
+\]
+
+where the kernel is constant on **right-side** connected components of the bipartite co-occurrence graph.
+
+## What is present
+- Corrected definitions (right-component formulation)
+- Theorem statements
+- Honest provenance file
+
+## What is deliberately absent
+- Any claim that the Lean proofs are complete
+- Any fabricated toolchain receipt
+- Any promotion of Theorems B/C or spectral geometry
+
+## How to proceed
+1. Place this package inside a Mathlib4 fork pinned to `v4.34.0-rc2`.
+2. `lake update && lake build`
+3. Discharge the three `sorry`s in `Theorems.lean`.
+4. Archive `#print axioms` and an exact-rational regression.
+5. Only then consider C4.
+
+No theorem is certified until the above gates are closed.
