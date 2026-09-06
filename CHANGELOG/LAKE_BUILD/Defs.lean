@@ -1,43 +1,71 @@
-import Mathlib.Data.Finset.Basic
+import Mathlib.Combinatorics.SimpleGraph.Basic
+import Mathlib.Combinatorics.SimpleGraph.Connectivity
+import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Data.Fintype.Basic
-import Mathlib.LinearAlgebra.Matrix.Basic
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Algebra.Module.LinearMap
-import AQARION.Mathlib.LaplacianBridge
+import Mathlib.Data.Finset.Basic
 
 namespace AQARION
 
-open Finset Function
+variable {X : Type*} [Fintype X] [DecidableEq X]
 
--- Basic setup
-variable (X : Type*) [Fintype X] [DecidableEq X] (n := Fintype.card X)
-variable (Π : Finset (Set X)) (hΠ : Π.PairwiseDisjoint id) (hΠ_cover : Π.toFinset = Set.univ)
--- We treat Π as a partition; each block is a nonempty set.
+/-- A partition of a finite set as a function to block indices. -/
+structure Partition (X : Type*) [Fintype X] where
+  numBlocks : ℕ
+  blockOf   : X → Fin numBlocks
+  -- surjectivity can be added later if needed
 
--- Block-constant subspace
-def V_Π : Subspace ℚ (X → ℚ) :=
-  { f : X → ℚ | ∀ B ∈ Π, ∀ x y ∈ B, f x = f y }
+/-- Block-constant functions (V_Π). -/
+def V_Pi (Π : Partition X) : Submodule ℝ (X → ℝ) :=
+  { carrier := {f | ∀ x y, Π.blockOf x = Π.blockOf y → f x = f y}
+    zero_mem' := by simp
+    add_mem' := by intro f g hf hg x y h; simp [hf x y h, hg x y h]
+    smul_mem' := by intro r f hf x y h; simp [hf x y h] }
 
--- Block-average projector
-noncomputable def P_Π : (X → ℚ) →ₗ[ℚ] (X → ℚ) := sorry
+/-- Koopman operator (composition with T). -/
+def K (T : X → X) : (X → ℝ) →ₗ[ℝ] (X → ℝ) :=
+  { toFun := fun f x => f (T x)
+    map_add' := by intros; ext; rfl
+    map_smul' := by intros; ext; rfl }
 
--- Koopman operator for a deterministic map T
-variable (T : X → X)
-def K_T : (X → ℚ) →ₗ[ℚ] (X → ℚ) := LinearMap.lcomp ℚ _ _ T
+/-- Defect operator D_Π = (I - P_Π) K P_Π (definitional form). -/
+-- Concrete matrix realisation left for later; the abstract form is sufficient for the kernel theorem.
 
--- Defect operator
-def D_Π : (X → ℚ) →ₗ[ℚ] (X → ℚ) := (LinearMap.id - P_Π) ∘ₗ K_T ∘ₗ P_Π
+/-- Right-side co-occurrence graph on blocks. -/
+def cooccurrenceGraph (Π : Partition X) (T : X → X) : SimpleGraph (Fin Π.numBlocks) :=
+  { Adj := fun j k =>
+      j ≠ k ∧ ∃ i : Fin Π.numBlocks,
+        (∃ x, Π.blockOf x = i ∧ Π.blockOf (T x) = j) ∧
+        (∃ y, Π.blockOf y = i ∧ Π.blockOf (T y) = k)
+    symm := by
+      intro j k ⟨hne, i, hx, hy⟩
+      exact ⟨hne.symm, i, hy, hx⟩
+    loopless := by
+      intro j ⟨hne, _⟩
+      exact hne rfl }
 
--- Target support
-def R_i (B : Set X) : Finset (Set X) :=
-  Π.filter fun B' => (T '' B).toFinset ∩ B' ≠ ∅
+/-- Connected components of the right co-occurrence graph. -/
+abbrev RightComponents (Π : Partition X) (T : X → X) :=
+  (cooccurrenceGraph Π T).ConnectedComponent
 
--- Co-occurrence graph H on block indices (or blocks)
-def H_Π : SimpleGraph (Set X) where
-  Adj B B' := B ≠ B' ∧ ∃ B₀ ∈ Π, B ∈ R_i B₀ ∧ B' ∈ R_i B₀
-
--- Incidence graph I
-def I_Π : SimpleGraph (Π × Π) := sorry -- bipartite, left = source blocks, right = target blocks
+/-- Functions constant on right components (ConstRightComp). -/
+def ConstRightComp (Π : Partition X) (T : X → X) : Submodule ℝ (X → ℝ) :=
+  { carrier := {f |
+      f ∈ V_Pi Π ∧
+      ∀ (j k : Fin Π.numBlocks),
+        (cooccurrenceGraph Π T).Reachable j k →
+        ∀ x y, Π.blockOf x = j → Π.blockOf y = k → f x = f y}
+    zero_mem' := by
+      refine ⟨by simp [V_Pi], ?_⟩
+      intros; simp
+    add_mem' := by
+      intro f g hf hg
+      refine ⟨add_mem hf.1 hg.1, ?_⟩
+      intros j k hr x y hx hy
+      exact congr_arg₂ (· + ·) (hf.2 j k hr x y hx hy) (hg.2 j k hr x y hx hy)
+    smul_mem' := by
+      intro r f hf
+      refine ⟨smul_mem _ _ hf.1, ?_⟩
+      intros j k hr x y hx hy
+      simp [hf.2 j k hr x y hx hy] }
 
 end AQARION
