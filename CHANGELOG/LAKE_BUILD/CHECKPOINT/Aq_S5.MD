@@ -1,4 +1,4 @@
-AQARION Lake Build — Filetree & README (Honest Overview)
+AQARION Lake Build 
 
 1. Filetree (CHANGELOG/LAKE_BUILD/filetree.md)
 
